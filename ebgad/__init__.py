@@ -12,6 +12,7 @@ twogroups  : two-groups aggregation over a channel of statistics
 hier       : hierarchical node-scale prior
 surprise   : marginal surprise of the relaxation profile
 ebsmooth   : matrix-free EB smoothing template (no eigendecomposition), exact null
+edgeleg    : neighbor-similarity statistic calibrated on the population of edges
 
-Entry points: run_ebgad.py at the repository root; ebgad/experiments/ebsmooth_run.py.
+Entry points: run_ebgad.py at the repository root; ebgad/experiments/ebsmooth_run.py and edge_leg_run.py.
 """

@@ -17,7 +17,7 @@ to reach its observed features. No neural network is trained, and labels are use
 | `soc/`, `bridge/` | Core of the implementation behind the paper's experiments: GOU trainer, prior optimizer and transport scores (`soc/`); graph operators, spectra and the PCA encoder (`bridge/`). The package names are historical. |
 | `neurips2026/` | The scripts behind the paper's experiments: score bank, selector, ablations, prior studies, figures. Indexed in `neurips2026/README.md`. |
 | `baselines/` | Runners for the baselines. Third-party code is not redistributed, see `baselines/README.md`. |
-| `ebgad/ebsmooth.py`, `docs/ebsmooth.md` | Matrix-free EB smoothing: no eigendecomposition, exact null. |
+| `ebgad/ebsmooth.py`, `ebgad/edgeleg.py`, `docs/ebsmooth.md` | Matrix-free EB smoothing (no eigendecomposition, exact null) and the edge statistic. |
 | `ebgad/experiments/` | Diagnostics, gates and runners for the package, indexed in its README. |
 | `tools/` | Dataset converters. |
 | `data_utils.py`, `eval_utils.py` | Dataset loading and metrics. |
@@ -81,6 +81,13 @@ preconditioner. The residual scale of every node has an exact chi-squared null. 
 
 ```bash
 PYTHONPATH=. python ebgad/experiments/ebsmooth_run.py reddit --seed 0 --permute-check --out results/ebsmooth/seed0
+```
+
+`ebgad/edgeleg.py` adds a statistic that costs one pass over the edges and no solve: the similarity of a node to
+each of its neighbors, standardized on the population of edges.
+
+```bash
+PYTHONPATH=. python ebgad/experiments/edge_leg_run.py reddit --out results/edge_leg
 ```
 
 ## Baselines

@@ -35,3 +35,20 @@ Diagnostics and gates for the `ebgad` package. Run from the repository root with
 - `robust_template_test.py`: Robust EB template: x_i = h_i + eps_i, eps_i ~ N(0, sigma^2 zeta_i I_d), zeta_i ~ InvGamma(nu/2, nu/2) (row-wise Student-t noise).
 - `two_scale_test.py`: Two legs of the relaxation under the EB model
 - `whitened_energy_test.py`: Node share of the evidence
+
+## Edge leg and connections source
+
+- `edge_count_probe.py`: Aggregation probe for the edge leg
+- `edge_degree_probe.py`: Degree-conditional calibration of the edge leg's node statistic.
+- `edge_leg_aligned_probe.py`: Probe: the edge leg in the graph-aligned feature subspace.
+- `edge_leg_nullcheck.py`: Monte Carlo check of the edge leg's null
+- `edge_leg_probe.py`: Feasibility probe for an *edge leg*
+- `edge_leg_run.py`: Run the edge leg (ebgad/edgeleg.py) on datasets and write results/ebgad_v4_edge/<ds>.json + <ds>_edge.npz.
+- `edge_leg_structural_probe.py`: Edge leg on the connections source
+- `edge_leg_test.py`: The edge leg of the EB model
+- `feature_structure_probe.py`: What do the reconstruction baselines exploit?
+- `joint_source_test.py`: One model, two data sources
+- `leg_combination.py`: Combine the local leg (residual magnitude, exact chi^2_d null) with the edge leg (direction relative to the neighbors, population-calibrated Fisher z) into one label-free statistic in the declared tail.
+- `structural_leg_test.py`: Structural leg: the same EB smoothing model applied to structural features X_s = A_n R, a Gaussian random sketch (d_s columns) of the node's normalized-adjacency row (row geometry preserved, columns ~ i.i.d.
+- `structure_probe.py`: Do the deviation benchmarks carry structural anomalies?
+- `structure_union_probe.py`: Structural channel and its union with the feature channel.
