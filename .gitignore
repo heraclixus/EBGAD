@@ -1,0 +1,36 @@
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+
+# Datasets (not committed; see DATA.md)
+data/
+DGraphFin/
+fraud_data/**/*.csv
+fraud_data/**/*.npz
+fraud_data/**/*.npy
+
+# Third-party baseline code, cloned separately (see baselines/README.md)
+third_party/
+
+# Outputs
+results/
+cache/
+figures/
+logs/
+models/
+checkpoints/
+wandb/
+*.pt
+*.pth
+*.ckpt

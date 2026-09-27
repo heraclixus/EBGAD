@@ -1,0 +1,14 @@
+# Tested with Python 3.12, torch 2.3.1, torch_geometric 2.6.1, numpy 2.3.5, scipy 1.16.0,
+# scikit-learn 1.7.1, pygod 1.1.0, pyamg 5.3.0 (CPU).
+numpy
+scipy
+scikit-learn
+torch
+torch_geometric
+pygod
+pyamg
+matplotlib
+pyyaml
+tqdm
+# baselines only
+pyod

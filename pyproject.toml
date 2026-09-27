@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ebgad"
+version = "0.1.0"
+description = "EB-GAD: training-free graph anomaly detection via empirical Bayes and graph Ornstein-Uhlenbeck transport"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy",
+  "scipy",
+  "scikit-learn",
+  "torch",
+  "torch_geometric",
+  "pygod",
+  "pyamg",
+  "matplotlib",
+  "pyyaml",
+  "tqdm",
+]
+
+[project.optional-dependencies]
+baselines = ["pyod"]
+
+[tool.setuptools]
+packages = ["ebgad", "soc", "bridge"]
+py-modules = ["data_utils", "eval_utils", "run_ebgad"]
