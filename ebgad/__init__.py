@@ -11,6 +11,7 @@ select     : empirical null and non-null mass, label-free selection
 twogroups  : two-groups aggregation over a channel of statistics
 hier       : hierarchical node-scale prior
 surprise   : marginal surprise of the relaxation profile
+ebsmooth   : matrix-free EB smoothing template (no eigendecomposition), exact null
 
-Entry point: run_ebgad.py at the repository root.
+Entry points: run_ebgad.py at the repository root; ebgad/experiments/ebsmooth_run.py.
 """
