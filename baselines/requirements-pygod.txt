@@ -1,0 +1,6 @@
+# PyGOD's mini-batch loader (NeighborLoader) needs pyg-lib or torch-sparse.
+# Use the wheel index that matches your torch build, see https://data.pyg.org/whl/ , for example:
+#   pip install -r baselines/requirements-pygod.txt -f https://data.pyg.org/whl/torch-2.3.0+cpu.html
+# Without them, baselines/run_pygod_fullbatch.py runs the same detectors in full batch.
+torch-sparse
+torch-scatter

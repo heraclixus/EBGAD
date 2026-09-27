@@ -1,0 +1,47 @@
+--- a/model.py
++++ b/model.py
+@@ -36,7 +36,7 @@
+     def forward(self, seq, adj, sparse=False):
+         seq_fts = self.fc(seq)
+         if sparse:
+-            out = torch.unsqueeze(torch.spmm(adj, torch.squeeze(seq, 0)), 0)
++            out = torch.unsqueeze(torch.spmm(adj, torch.squeeze(seq_fts, 0)), 0)
+         else:
+             out = torch.bmm(adj, seq_fts)
+         if self.bias is not None:
+@@ -148,9 +148,8 @@
+             self.read = WSReadout()
+ 
+     def forward(self, seq, adj, sparse=False):
+-
+-        feat = self.gcn1(seq, adj)
+-        feat = self.gcn2(feat, adj)
++        feat = self.gcn1(seq, adj, sparse=sparse)
++        feat = self.gcn2(feat, adj, sparse=sparse)
+         feat1 = self.fc1(feat)
+         feat2 = self.fc2(feat)
+ 
+--- a/utils.py
++++ b/utils.py
+@@ -4,7 +4,7 @@
+ import torch
+ import scipy.io as sio
+ import random
+-import dgl
++# import dgl  # removed — not needed for TAM model/training
+ 
+ def sparse_to_tuple(sparse_mx, insert_batch=False):
+     """Convert sparse matrix to tuple representation."""
+@@ -109,10 +109,8 @@
+ 
+ 
+ def adj_to_dgl_graph(adj):
+-    """Convert adjacency matrix to dgl format."""
+-    nx_graph = nx.from_scipy_sparse_matrix(adj)
+-    dgl_graph = dgl.DGLGraph(nx_graph)
+-    return dgl_graph
++    """Convert adjacency matrix to dgl format. (Stub — DGL not required.)"""
++    raise ImportError("DGL not installed. This function is unused by run_tam.py.")
+ 
+ 
+ # compute the distance between each node
