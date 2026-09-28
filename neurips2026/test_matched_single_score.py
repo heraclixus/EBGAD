@@ -189,8 +189,8 @@ def family_report(prefix, bank, y_eval, mask) -> dict:
     }
 
 
-def run_dataset(ds: str, device: str, impose_fit: bool = False) -> dict:
-    cfg = TABLE6[ds]
+def run_dataset(ds: str, device: str, impose_fit: bool = False, configs: dict | None = None) -> dict:
+    cfg = (configs or TABLE6)[ds]
     base = cfg.get("load", ds)
     load_name = ("YelpChi" if base == "yelpchi" else
                  "Facebook" if base == "facebook" else
@@ -285,7 +285,10 @@ def main() -> None:
     parser.add_argument("--impose-fit", action="store_true",
                         help="Use Table 6 (rho, kappa) directly instead of refitting.")
     parser.add_argument("--out", default="results/horizon_study/matched_single_score.json")
+    parser.add_argument("--config-json", default=None,
+                        help="Per-dataset configurations (tmpl, gamma, tk, pca, sub, rho, kappa) replacing TABLE6.")
     args = parser.parse_args()
+    configs = json.load(open(args.config_json)) if args.config_json else None
 
     results = {}
     for ds in args.datasets.split(","):
@@ -293,7 +296,7 @@ def main() -> None:
         if not ds:
             continue
         try:
-            results[ds] = run_dataset(ds, args.device, impose_fit=args.impose_fit)
+            results[ds] = run_dataset(ds, args.device, impose_fit=args.impose_fit, configs=configs)
         except Exception as exc:
             import traceback
             traceback.print_exc()

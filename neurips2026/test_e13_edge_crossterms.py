@@ -79,7 +79,8 @@ def run(ds: str, frac: float, seed: int, cluster_size: int, device: str) -> dict
         truncated_k=None, modeled_subspace="drop_nullspace",
         template_type="low", device=device,
     )
-    fit = fit_best_entry(entries, ERA_HORIZONS, ERA_KAPPAS, use_gamma_jacobian=False)
+    # equilibrium residual likelihood, as in Algorithm 1 (the horizon enters the scores, not the fit)
+    fit = fit_best_entry(entries, [np.inf], ERA_KAPPAS, use_gamma_jacobian=False)
     entry = entry_for_fit(entries, fit)
     q = q_for_fit(entry, fit)
 

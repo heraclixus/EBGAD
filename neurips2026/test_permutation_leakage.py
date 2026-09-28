@@ -125,7 +125,22 @@ CFGS = {
 }
 
 
+def index_auc(ds):
+    """AUROC of the node index itself (how strongly the released node order sorts the labels)."""
+    load_name = ("YelpChi" if ds == "yelpchi" else "Facebook" if ds == "facebook" else ds)
+    data = load_data(load_name)
+    y = data.y.detach().cpu().numpy()
+    mask = (y >= 0) & (y <= 1)
+    return 100 * safe_auc(y[mask], np.arange(len(y), dtype=np.float64)[mask])
+
+
 def main():
+    import argparse
+    import json
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--out", default=None)
+    args = parser.parse_args()
+    record = {"index_ties": os.environ.get("EBGAD_INDEX_TIES") == "1"}
     for ds, cfg in CFGS.items():
         print("=== %s ===" % ds, flush=True)
         base = run(ds, cfg, permute=False)
@@ -139,6 +154,11 @@ def main():
             flag = "  <-- ORDER-DEPENDENT" if abs(d) > 1.0 else ""
             print("    %-24s %7.2f -> %7.2f  (%+.2f)%s"
                   % (k, base[k], perm[k], d, flag), flush=True)
+        record[ds] = {"original": base, "relabeled": perm, "index_auc": index_auc(ds)}
+        print("  node-index AUROC: %.2f" % record[ds]["index_auc"], flush=True)
+    if args.out:
+        with open(args.out, "w") as f:
+            json.dump(record, f, indent=1)
 
 
 if __name__ == "__main__":
