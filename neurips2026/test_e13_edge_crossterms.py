@@ -26,6 +26,7 @@ import numpy as np
 from sklearn.metrics import roc_auc_score
 
 from data_utils import load_data
+from test_multiscale_gou_poe import study_template_gammas
 from test_dynamic_score_bank import (
     entry_for_fit,
     fit_best_entry,
@@ -74,7 +75,7 @@ def run(ds: str, frac: float, seed: int, cluster_size: int, device: str) -> dict
     injected = np.zeros(len(y0), bool)
     injected[nodes] = True
     entries = prepare_model_entries(
-        data, graph_types=["original"], template_gammas=DS_GAMMAS[ds],
+        data, graph_types=["original"], template_gammas=study_template_gammas(data, DS_GAMMAS[ds]),
         pca_dim=64 if data.x.shape[1] > 100 else None,
         truncated_k=None, modeled_subspace="drop_nullspace",
         template_type="low", device=device,

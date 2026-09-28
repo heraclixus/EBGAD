@@ -63,7 +63,7 @@ from test_dynamic_score_bank import (
     selector_diagnostics,
     summarize_fit,
 )
-from test_multiscale_gou_poe import gou_precisions, ks_null_deviation, percentile_rank
+from test_multiscale_gou_poe import gou_precisions, ks_null_deviation, nearest_template_gamma, percentile_rank
 
 
 PAPER_EBGAD_CONFIGS = {
@@ -1377,12 +1377,12 @@ def run_dataset(args, ds: str) -> Dict:
 
     h, density = compute_graph_stats(data)
     if args.template_gammas == "density":
-        template_gammas = density_adjusted_template_gammas(h, density)
+        if args.bandwidth_rule == "center":
+            template_gammas = [nearest_template_gamma(h, density)]
+        else:
+            template_gammas = density_adjusted_template_gammas(h, density)
     else:
         template_gammas = parse_grid(args.template_gammas)
-    paper_cfg = PAPER_EBGAD_CONFIGS.get(ds.lower())
-    if paper_cfg is not None:
-        template_gammas = sorted({float(g) for g in template_gammas} | {float(paper_cfg["gamma"])})
     graph_types = parse_names(args.graph_types)
     horizons = canonical_horizons(
         parse_grid(args.horizons),
@@ -1417,6 +1417,19 @@ def run_dataset(args, ds: str) -> Dict:
 
     stationary_scores = horizon_score_bank(entry, q, [np.inf])
     stationary_summary = evaluate_score_bank(y, mask, stationary_scores, references=references)
+
+    # equilibrium anchor: the grid bandwidth nearest to the graph-statistic center, with its own EB fit
+    eq_anchor_gamma = nearest_template_gamma(h, density)
+    eq_anchor_entries = [e for e in entries if abs(float(e["template_gamma"]) - eq_anchor_gamma) < 1e-9]
+    eq_anchor_fit, eq_anchor_scores, eq_anchor_summary = None, {}, {}
+    if eq_anchor_entries:
+        eq_anchor_fit = fit_best_entry(eq_anchor_entries, [np.inf], kappas, False)
+        eq_anchor_entry = entry_for_fit(eq_anchor_entries, eq_anchor_fit)
+        eq_anchor_scores = horizon_score_bank(eq_anchor_entry, q_for_fit(eq_anchor_entry, eq_anchor_fit), [np.inf])
+        eq_anchor_summary = evaluate_score_bank(
+            y, mask, eq_anchor_scores,
+            references=node_unsupervised_references(data, eq_anchor_entry["delta"]),
+        )
 
     print("  computing path-dissipation scores", flush=True)
     path_scores, path_meta = path_dissipation_score_bank(
@@ -1553,6 +1566,7 @@ def run_dataset(args, ds: str) -> Dict:
         mask,
         {
             "stationary": stationary_scores,
+            "eq_anchor": eq_anchor_scores,
             "path": path_scores,
             "robust_path": robust_path_scores,
             "two_groups": two_groups_scores,
@@ -1590,12 +1604,15 @@ def run_dataset(args, ds: str) -> Dict:
             "pca_dim": pca_dim,
             "modeled_subspace": args.modeled_subspace,
             "gamma_jacobian": args.gamma_jacobian,
+            "bandwidth_rule": args.bandwidth_rule,
             "horizons": [format_horizon(x) for x in horizons],
             "finite_only_bank": bool(args.finite_only_bank),
             "kappas": kappas,
         },
         "stationary_fit": summarize_fit(fit),
         "stationary": stationary_summary,
+        "eq_anchor_fit": summarize_fit(eq_anchor_fit) if eq_anchor_fit is not None else None,
+        "eq_anchor": eq_anchor_summary,
         "path_dissipation": path_summary,
         "path_dissipation_meta": path_meta,
         "robust_path": robust_path_summary,
@@ -1632,6 +1649,9 @@ def main() -> None:
     parser.add_argument("--modeled-subspace", default="legacy",
                         choices=["legacy", "drop_nullspace"])
     parser.add_argument("--gamma-jacobian", action="store_true")
+    parser.add_argument("--bandwidth-rule", default="likelihood", choices=["likelihood", "center"],
+                        help="likelihood: residual-space profile likelihood over the density grid; "
+                             "center: the grid value nearest to the graph-statistic center.")
     parser.add_argument("--path-quad", type=int, default=4)
     parser.add_argument("--path-tail-factor", type=float, default=16.0)
     parser.add_argument("--path-tail-cap", type=float, default=1000.0)

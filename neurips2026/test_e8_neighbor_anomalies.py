@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 
 from data_utils import load_data
+from test_multiscale_gou_poe import study_template_gammas
 from test_dynamic_score_bank import (
     entry_for_fit,
     evaluate_score_bank,
@@ -101,7 +102,7 @@ def run(ds: str, placement: str, frac: float, seed: int, device: str,
     injected = np.zeros(len(y0), bool)
     injected[nodes] = True
     entries = prepare_model_entries(
-        data, graph_types=["original"], template_gammas=DS_GAMMAS[ds],
+        data, graph_types=["original"], template_gammas=study_template_gammas(data, DS_GAMMAS[ds]),
         pca_dim=64 if data.x.shape[1] > 100 else None,
         truncated_k=None, modeled_subspace="drop_nullspace",
         template_type="low", device=device,

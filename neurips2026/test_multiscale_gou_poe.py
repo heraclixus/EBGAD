@@ -109,6 +109,29 @@ def compute_graph_stats(data) -> Tuple[float, float]:
     return float(cos.mean()), float(density)
 
 
+def template_gamma_center(h: float, density: float) -> float:
+    density_factor = np.sqrt(max(density, 10.0) / 10.0)
+    return float(np.clip((0.5 + h) / density_factor, 0.05, 10.0))
+
+
+def nearest_template_gamma(h: float, density: float) -> float:
+    """Grid value nearest (on the log scale of the grid) to the graph-statistic center."""
+    center = template_gamma_center(h, density)
+    return float(min(TEMPLATE_GAMMAS, key=lambda g: abs(np.log(g) - np.log(center))))
+
+
+def study_template_gammas(data, grid: Sequence[float]) -> List[float]:
+    """Bandwidths offered to the fit in a study of the EB-fitted bank.
+
+    Default: the grid, among whose values the residual likelihood chooses. EBGAD_STUDY_BANDWIDTH=anchor
+    runs the study at the anchor bandwidth, the grid value nearest to the graph-statistic center.
+    """
+    if os.environ.get("EBGAD_STUDY_BANDWIDTH", "fitted") != "anchor":
+        return list(grid)
+    h, density = compute_graph_stats(data)
+    return [nearest_template_gamma(h, density)]
+
+
 def density_adjusted_template_gammas(h: float, density: float) -> List[float]:
     density_factor = np.sqrt(max(density, 10.0) / 10.0)
     gamma_center = np.clip((0.5 + h) / density_factor, 0.05, 10.0)

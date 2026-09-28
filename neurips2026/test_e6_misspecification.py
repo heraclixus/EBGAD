@@ -26,6 +26,7 @@ from types import SimpleNamespace
 
 from bridge.synthetic import _stochastic_block_model
 from bridge.graph_ops import compute_laplacian
+from test_multiscale_gou_poe import study_template_gammas
 from test_dynamic_score_bank import (
     entry_for_fit,
     evaluate_score_bank,
@@ -92,7 +93,7 @@ def run(variant: str, n: int, d: int, frac: float, seed: int) -> dict:
     y = data.y.numpy()
     mask = np.ones(len(y), bool)
     entries = prepare_model_entries(
-        data, graph_types=["original"], template_gammas=[0.5, 1.0, 2.0],
+        data, graph_types=["original"], template_gammas=study_template_gammas(data, [0.5, 1.0, 2.0]),
         pca_dim=None, truncated_k=None, modeled_subspace="drop_nullspace",
         template_type="low", device="cpu",
     )
