@@ -1,0 +1,1069 @@
+{
+ "sources": {
+  "*": "published in the TAM benchmark (Qiao and Pang, 2023)",
+  "dagger": "published by the baseline's authors (out of memory on our hardware)",
+  "": "our runs with published hyperparameters"
+ },
+ "auroc": {
+  "weibo": {
+   "LOF": [
+    57.9,
+    null,
+    ""
+   ],
+   "DIF": [
+    38.2,
+    1.8,
+    ""
+   ],
+   "ANOMALOUS": [
+    94.5,
+    0.0,
+    ""
+   ],
+   "DOMINANT": [
+    85.0,
+    14.6,
+    ""
+   ],
+   "AnomalyDAE": [
+    91.5,
+    1.2,
+    ""
+   ],
+   "CONAD": [
+    85.4,
+    14.3,
+    ""
+   ],
+   "CoLA": [
+    28.1,
+    0.0,
+    ""
+   ],
+   "DiffGAD": [
+    93.4,
+    0.3,
+    ""
+   ],
+   "TAM": [
+    70.9,
+    0.0,
+    ""
+   ]
+  },
+  "reddit": {
+   "LOF": [
+    57.2,
+    null,
+    ""
+   ],
+   "DIF": [
+    53.5,
+    1.4,
+    ""
+   ],
+   "ANOMALOUS": [
+    54.9,
+    5.6,
+    ""
+   ],
+   "DOMINANT": [
+    56.0,
+    0.2,
+    ""
+   ],
+   "AnomalyDAE": [
+    55.7,
+    0.4,
+    ""
+   ],
+   "CONAD": [
+    56.1,
+    0.1,
+    ""
+   ],
+   "CoLA": [
+    60.3,
+    0.7,
+    "*"
+   ],
+   "DiffGAD": [
+    56.3,
+    0.1,
+    ""
+   ],
+   "TAM": [
+    60.2,
+    0.4,
+    "*"
+   ]
+  },
+  "amazon": {
+   "LOF": [
+    47.4,
+    null,
+    ""
+   ],
+   "DIF": [
+    77.1,
+    2.5,
+    ""
+   ],
+   "ANOMALOUS": [
+    44.6,
+    0.3,
+    "*"
+   ],
+   "DOMINANT": [
+    60.0,
+    0.4,
+    "*"
+   ],
+   "AnomalyDAE": [
+    64.6,
+    7.1,
+    ""
+   ],
+   "CONAD": [
+    55.5,
+    1.6,
+    ""
+   ],
+   "CoLA": [
+    59.0,
+    0.8,
+    "*"
+   ],
+   "DiffGAD": [
+    55.9,
+    0.1,
+    ""
+   ],
+   "TAM": [
+    70.6,
+    1.0,
+    "*"
+   ]
+  },
+  "yelpchi": {
+   "LOF": [
+    57.2,
+    null,
+    ""
+   ],
+   "DIF": [
+    56.0,
+    0.9,
+    ""
+   ],
+   "ANOMALOUS": [
+    49.6,
+    0.3,
+    "*"
+   ],
+   "DOMINANT": [
+    41.3,
+    1.0,
+    "*"
+   ],
+   "AnomalyDAE": [
+    56.6,
+    2.6,
+    ""
+   ],
+   "CONAD": [
+    28.7,
+    0.2,
+    ""
+   ],
+   "CoLA": [
+    46.4,
+    0.1,
+    "*"
+   ],
+   "DiffGAD": [
+    29.1,
+    0.0,
+    ""
+   ],
+   "TAM": [
+    56.4,
+    0.7,
+    "*"
+   ]
+  },
+  "blogcatalog": {
+   "LOF": [
+    68.6,
+    null,
+    ""
+   ],
+   "DIF": [
+    57.4,
+    2.1,
+    ""
+   ],
+   "ANOMALOUS": [
+    56.5,
+    2.5,
+    "*"
+   ],
+   "DOMINANT": [
+    75.9,
+    1.0,
+    "*"
+   ],
+   "AnomalyDAE": [
+    74.7,
+    0.0,
+    ""
+   ],
+   "CONAD": [
+    68.7,
+    0.0,
+    ""
+   ],
+   "CoLA": [
+    77.5,
+    0.9,
+    "*"
+   ],
+   "DiffGAD": [
+    76.6,
+    0.0,
+    ""
+   ],
+   "TAM": [
+    82.5,
+    0.3,
+    "*"
+   ]
+  },
+  "facebook": {
+   "LOF": [
+    47.7,
+    null,
+    ""
+   ],
+   "DIF": [
+    37.8,
+    2.8,
+    ""
+   ],
+   "ANOMALOUS": [
+    90.2,
+    0.5,
+    "*"
+   ],
+   "DOMINANT": [
+    56.8,
+    0.2,
+    "*"
+   ],
+   "AnomalyDAE": [
+    54.7,
+    0.6,
+    ""
+   ],
+   "CONAD": [
+    14.2,
+    1.5,
+    ""
+   ],
+   "CoLA": [
+    84.3,
+    1.1,
+    "*"
+   ],
+   "DiffGAD": [
+    28.0,
+    4.7,
+    ""
+   ],
+   "TAM": [
+    91.4,
+    0.8,
+    "*"
+   ]
+  },
+  "acm": {
+   "LOF": [
+    72.0,
+    null,
+    ""
+   ],
+   "DIF": [
+    49.2,
+    1.2,
+    ""
+   ],
+   "ANOMALOUS": [
+    68.6,
+    6.3,
+    "*"
+   ],
+   "DOMINANT": [
+    85.7,
+    2.0,
+    "*"
+   ],
+   "AnomalyDAE": [
+    74.8,
+    0.0,
+    ""
+   ],
+   "CONAD": [
+    80.0,
+    0.1,
+    ""
+   ],
+   "CoLA": [
+    82.3,
+    0.1,
+    "*"
+   ],
+   "DiffGAD": [
+    81.8,
+    1.9,
+    ""
+   ],
+   "TAM": [
+    88.8,
+    2.4,
+    "*"
+   ]
+  },
+  "elliptic": {
+   "LOF": [
+    45.1,
+    null,
+    ""
+   ],
+   "DIF": [
+    21.8,
+    0.5,
+    ""
+   ],
+   "ANOMALOUS": null,
+   "DOMINANT": [
+    11.2,
+    3.5,
+    ""
+   ],
+   "AnomalyDAE": [
+    14.2,
+    1.2,
+    ""
+   ],
+   "CONAD": [
+    11.3,
+    0.2,
+    ""
+   ],
+   "CoLA": [
+    65.3,
+    1.3,
+    ""
+   ],
+   "DiffGAD": [
+    26.6,
+    1.0,
+    ""
+   ],
+   "TAM": [
+    36.0,
+    0.2,
+    ""
+   ]
+  },
+  "elliptic_plus_plus": {
+   "LOF": [
+    45.9,
+    null,
+    ""
+   ],
+   "DIF": [
+    22.5,
+    0.7,
+    ""
+   ],
+   "ANOMALOUS": null,
+   "DOMINANT": [
+    39.7,
+    0.0,
+    ""
+   ],
+   "AnomalyDAE": [
+    23.7,
+    3.9,
+    ""
+   ],
+   "CONAD": [
+    39.3,
+    0.9,
+    ""
+   ],
+   "CoLA": [
+    62.9,
+    6.7,
+    ""
+   ],
+   "DiffGAD": [
+    18.4,
+    2.3,
+    ""
+   ],
+   "TAM": [
+    34.4,
+    0.2,
+    ""
+   ]
+  },
+  "dgraph": {
+   "LOF": [
+    40.4,
+    null,
+    ""
+   ],
+   "DIF": [
+    64.2,
+    1.8,
+    ""
+   ],
+   "ANOMALOUS": null,
+   "DOMINANT": null,
+   "AnomalyDAE": null,
+   "CONAD": [
+    34.7,
+    1.2,
+    "dagger"
+   ],
+   "CoLA": [
+    54.8,
+    0.7,
+    ""
+   ],
+   "DiffGAD": [
+    52.4,
+    0.0,
+    "dagger"
+   ],
+   "TAM": [
+    35.7,
+    0.8,
+    ""
+   ]
+  },
+  "t_finance": {
+   "LOF": [
+    34.5,
+    null,
+    ""
+   ],
+   "DIF": [
+    35.5,
+    1.5,
+    ""
+   ],
+   "ANOMALOUS": [
+    55.4,
+    0.0,
+    ""
+   ],
+   "DOMINANT": [
+    53.8,
+    0.0,
+    ""
+   ],
+   "AnomalyDAE": [
+    32.1,
+    0.0,
+    ""
+   ],
+   "CONAD": [
+    63.1,
+    0.1,
+    ""
+   ],
+   "CoLA": [
+    48.3,
+    0.0,
+    ""
+   ],
+   "DiffGAD": [
+    53.6,
+    0.1,
+    ""
+   ],
+   "TAM": [
+    61.8,
+    0.0,
+    "dagger"
+   ]
+  }
+ },
+ "auprc": {
+  "LOF": {
+   "weibo": [
+    7.0,
+    ""
+   ],
+   "reddit": [
+    4.1,
+    ""
+   ],
+   "amazon": [
+    6.7,
+    ""
+   ],
+   "yelpchi": [
+    7.0,
+    ""
+   ],
+   "blogcatalog": [
+    24.7,
+    ""
+   ],
+   "facebook": [
+    2.1,
+    ""
+   ],
+   "acm": [
+    14.6,
+    ""
+   ],
+   "elliptic": [
+    10.2,
+    ""
+   ],
+   "elliptic_plus_plus": [
+    8.5,
+    ""
+   ],
+   "dgraph": [
+    0.9,
+    ""
+   ],
+   "t_finance": [
+    3.2,
+    ""
+   ]
+  },
+  "DIF": {
+   "weibo": [
+    3.9,
+    ""
+   ],
+   "reddit": [
+    3.7,
+    ""
+   ],
+   "amazon": [
+    15.4,
+    ""
+   ],
+   "yelpchi": [
+    6.4,
+    ""
+   ],
+   "blogcatalog": [
+    7.4,
+    ""
+   ],
+   "facebook": [
+    1.8,
+    ""
+   ],
+   "acm": [
+    3.5,
+    ""
+   ],
+   "elliptic": [
+    6.0,
+    ""
+   ],
+   "elliptic_plus_plus": [
+    6.1,
+    ""
+   ],
+   "dgraph": [
+    1.9,
+    ""
+   ],
+   "t_finance": [
+    3.2,
+    ""
+   ]
+  },
+  "ANOMALOUS": {
+   "weibo": [
+    34.6,
+    ""
+   ],
+   "reddit": [
+    3.9,
+    ""
+   ],
+   "amazon": [
+    5.6,
+    "*"
+   ],
+   "yelpchi": [
+    5.2,
+    "*"
+   ],
+   "blogcatalog": [
+    6.5,
+    "*"
+   ],
+   "facebook": [
+    19.0,
+    "*"
+   ],
+   "acm": [
+    6.4,
+    "*"
+   ],
+   "elliptic": [
+    null,
+    "OOM"
+   ],
+   "elliptic_plus_plus": [
+    null,
+    "OOM"
+   ],
+   "dgraph": [
+    null,
+    "OOM"
+   ],
+   "t_finance": [
+    4.8,
+    ""
+   ]
+  },
+  "DOMINANT": {
+   "weibo": [
+    22.0,
+    ""
+   ],
+   "reddit": [
+    3.7,
+    ""
+   ],
+   "amazon": [
+    14.2,
+    "*"
+   ],
+   "yelpchi": [
+    4.0,
+    "*"
+   ],
+   "blogcatalog": [
+    31.0,
+    "*"
+   ],
+   "facebook": [
+    3.1,
+    "*"
+   ],
+   "acm": [
+    44.0,
+    "*"
+   ],
+   "elliptic": [
+    5.3,
+    ""
+   ],
+   "elliptic_plus_plus": [
+    7.4,
+    ""
+   ],
+   "dgraph": [
+    null,
+    "OOM"
+   ],
+   "t_finance": [
+    6.6,
+    ""
+   ]
+  },
+  "AnomalyDAE": {
+   "weibo": [
+    30.9,
+    ""
+   ],
+   "reddit": [
+    3.1,
+    ""
+   ],
+   "amazon": [
+    10.5,
+    ""
+   ],
+   "yelpchi": [
+    6.7,
+    ""
+   ],
+   "blogcatalog": [
+    36.7,
+    ""
+   ],
+   "facebook": [
+    2.7,
+    ""
+   ],
+   "acm": [
+    27.0,
+    ""
+   ],
+   "elliptic": [
+    5.4,
+    ""
+   ],
+   "elliptic_plus_plus": [
+    6.0,
+    ""
+   ],
+   "dgraph": [
+    null,
+    "OOM"
+   ],
+   "t_finance": [
+    3.1,
+    ""
+   ]
+  },
+  "CONAD": {
+   "weibo": [
+    22.8,
+    ""
+   ],
+   "reddit": [
+    3.7,
+    ""
+   ],
+   "amazon": [
+    10.8,
+    ""
+   ],
+   "yelpchi": [
+    3.3,
+    ""
+   ],
+   "blogcatalog": [
+    11.1,
+    ""
+   ],
+   "facebook": [
+    1.3,
+    ""
+   ],
+   "acm": [
+    11.3,
+    ""
+   ],
+   "elliptic": [
+    5.3,
+    ""
+   ],
+   "elliptic_plus_plus": [
+    7.3,
+    ""
+   ],
+   "dgraph": [
+    null,
+    "n/a"
+   ],
+   "t_finance": [
+    6.6,
+    ""
+   ]
+  },
+  "CoLA": {
+   "weibo": [
+    4.3,
+    ""
+   ],
+   "reddit": [
+    4.5,
+    "*"
+   ],
+   "amazon": [
+    6.8,
+    "*"
+   ],
+   "yelpchi": [
+    4.5,
+    "*"
+   ],
+   "blogcatalog": [
+    32.7,
+    "*"
+   ],
+   "facebook": [
+    21.1,
+    "*"
+   ],
+   "acm": [
+    32.4,
+    "*"
+   ],
+   "elliptic": [
+    15.3,
+    ""
+   ],
+   "elliptic_plus_plus": [
+    12.2,
+    ""
+   ],
+   "dgraph": [
+    1.4,
+    ""
+   ],
+   "t_finance": [
+    3.4,
+    ""
+   ]
+  },
+  "DiffGAD": {
+   "weibo": [
+    32.3,
+    ""
+   ],
+   "reddit": [
+    3.7,
+    ""
+   ],
+   "amazon": [
+    12.3,
+    ""
+   ],
+   "yelpchi": [
+    3.3,
+    ""
+   ],
+   "blogcatalog": [
+    30.4,
+    ""
+   ],
+   "facebook": [
+    1.5,
+    ""
+   ],
+   "acm": [
+    17.1,
+    ""
+   ],
+   "elliptic": [
+    6.2,
+    ""
+   ],
+   "elliptic_plus_plus": [
+    5.7,
+    ""
+   ],
+   "dgraph": [
+    null,
+    "n/a"
+   ],
+   "t_finance": [
+    4.6,
+    ""
+   ]
+  },
+  "TAM": {
+   "weibo": [
+    6.8,
+    ""
+   ],
+   "reddit": [
+    4.5,
+    "*"
+   ],
+   "amazon": [
+    26.3,
+    "*"
+   ],
+   "yelpchi": [
+    7.8,
+    "*"
+   ],
+   "blogcatalog": [
+    41.8,
+    "*"
+   ],
+   "facebook": [
+    22.3,
+    "*"
+   ],
+   "acm": [
+    51.2,
+    "*"
+   ],
+   "elliptic": [
+    6.9,
+    ""
+   ],
+   "elliptic_plus_plus": [
+    6.8,
+    ""
+   ],
+   "dgraph": [
+    0.8,
+    ""
+   ],
+   "t_finance": [
+    null,
+    "n/a"
+   ]
+  }
+ },
+ "encoder": {
+  "weibo": [
+   95.7,
+   "MLP"
+  ],
+  "reddit": [
+   58.9,
+   "MLP"
+  ],
+  "amazon": [
+   60.3,
+   "MLP"
+  ],
+  "yelpchi": [
+   68.0,
+   "SAGE"
+  ],
+  "blogcatalog": [
+   77.6,
+   "MLP"
+  ],
+  "facebook": [
+   95.4,
+   "MLP"
+  ],
+  "acm": [
+   63.7,
+   "MLP"
+  ],
+  "elliptic": [
+   56.4,
+   "SAGE"
+  ],
+  "elliptic_plus_plus": [
+   57.7,
+   "SAGE"
+  ],
+  "t_finance": [
+   84.9,
+   "SAGE-small"
+  ],
+  "dgraph": [
+   58.8,
+   "SAGE-small"
+  ]
+ },
+ "runtime": {
+  "weibo": {
+   "ANOMALOUS": 78.0,
+   "DOMINANT": 63.0,
+   "AnomalyDAE": 1.0,
+   "CONAD": 95.0,
+   "CoLA": 130.0,
+   "DiffGAD": 134.0,
+   "TAM": 858.0
+  },
+  "reddit": {
+   "ANOMALOUS": 38.0,
+   "DOMINANT": 35.0,
+   "AnomalyDAE": 2.0,
+   "CONAD": 57.0,
+   "CoLA": 8.0,
+   "DiffGAD": 110.0,
+   "TAM": 5467.0
+  },
+  "amazon": {
+   "ANOMALOUS": 25.0,
+   "DOMINANT": 37.0,
+   "AnomalyDAE": 153.0,
+   "CONAD": 308.0,
+   "CoLA": 14.0,
+   "DiffGAD": 106.0,
+   "TAM": 10739.0
+  },
+  "yelpchi": {
+   "ANOMALOUS": 170.0,
+   "DOMINANT": 185.0,
+   "AnomalyDAE": 1152.0,
+   "CONAD": 1359.0,
+   "CoLA": 5.0,
+   "DiffGAD": 118.0,
+   "TAM": 5106.0
+  },
+  "blogcatalog": {
+   "ANOMALOUS": 447.0,
+   "DOMINANT": 430.0,
+   "AnomalyDAE": 92.0,
+   "CONAD": 3047.0,
+   "CoLA": 18.0,
+   "DiffGAD": 3272.0,
+   "TAM": 8764.0
+  },
+  "facebook": {
+   "ANOMALOUS": 3.0,
+   "DOMINANT": 20.0,
+   "AnomalyDAE": 9.0,
+   "CONAD": 56.0,
+   "CoLA": 3.0,
+   "DiffGAD": 118.0,
+   "TAM": 479.0
+  },
+  "acm": {
+   "ANOMALOUS": 6503.0,
+   "DOMINANT": 290.0,
+   "AnomalyDAE": 580.0,
+   "CONAD": 2293.0,
+   "CoLA": 26.0,
+   "DiffGAD": 39209.0,
+   "TAM": 14446.0
+  },
+  "t_finance": {
+   "ANOMALOUS": 963.0,
+   "DOMINANT": 3425.0,
+   "AnomalyDAE": 9761.0,
+   "CONAD": 5028.0,
+   "CoLA": 1107.0,
+   "DiffGAD": 384.0,
+   "TAM": null
+  },
+  "elliptic": {
+   "ANOMALOUS": null,
+   "DOMINANT": 19802.0,
+   "AnomalyDAE": null,
+   "CONAD": null,
+   "CoLA": 263.0,
+   "DiffGAD": 294.0,
+   "TAM": 1176.0
+  },
+  "elliptic_plus_plus": {
+   "ANOMALOUS": null,
+   "DOMINANT": 16962.0,
+   "AnomalyDAE": null,
+   "CONAD": null,
+   "CoLA": 288.0,
+   "DiffGAD": 292.0,
+   "TAM": 1186.0
+  },
+  "dgraph": {
+   "ANOMALOUS": null,
+   "DOMINANT": null,
+   "AnomalyDAE": null,
+   "CONAD": null,
+   "CoLA": 4117.0,
+   "DiffGAD": null,
+   "TAM": 3929.0
+  }
+ }
+}
