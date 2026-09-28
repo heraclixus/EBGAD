@@ -263,6 +263,34 @@ def sample_two_band_prior(
     return low + high
 
 
+def eigh_float64(L: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Symmetric eigendecomposition computed in float64, returned in ``L``'s dtype.
+
+    In float32 the zero eigenvalues of a Laplacian come out at about 1e-7 with
+    either sign, so a nullspace test against a small tolerance is decided by
+    rounding, and with it by the node order and the platform.
+    """
+    Ld = L.detach().to("cpu", torch.float64)
+    lam, V = torch.linalg.eigh(0.5 * (Ld + Ld.T))
+    lam = torch.where(lam < 1e-10, torch.zeros_like(lam), lam)
+    return lam.to(L.device, L.dtype), V.to(L.device, L.dtype)
+
+
+def ritz_refine(L_sparse: torch.Tensor, V: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Orthonormalize a LOBPCG basis in float64 and re-diagonalize L on its span.
+
+    ``torch.lobpcg`` returns a float32 basis with an orthonormality error of
+    about 1e-4; the Ritz pairs of the orthonormalized span remove it and give
+    eigenvalues whose zeros are exact to float64 rounding.
+    """
+    W, _ = torch.linalg.qr(V.detach().to("cpu", torch.float64))
+    Ld = L_sparse.detach().to("cpu").coalesce().double()
+    H = W.T @ torch.sparse.mm(Ld, W)
+    lam, U = torch.linalg.eigh(0.5 * (H + H.T))
+    lam = torch.where(lam < 1e-10, torch.zeros_like(lam), lam)
+    return lam.to(V.device, V.dtype), (W @ U).to(V.device, V.dtype)
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # 7.  GraphEigen — eigenspace precompute cache
 # ═══════════════════════════════════════════════════════════════════════════
@@ -300,7 +328,7 @@ class GraphEigen:
             # Build L on CPU to avoid GPU segfault from to_dense_adj on large graphs
             ei_cpu = edge_index.cpu()
             L = compute_laplacian(ei_cpu, num_nodes, variant=variant)
-            lam, V = torch.linalg.eigh(L)
+            lam, V = eigh_float64(L)
             self.lam_L = lam.to(target_device)
             self.V = V.to(target_device)
             self.L = L  # keep on CPU to save GPU memory
@@ -309,11 +337,11 @@ class GraphEigen:
             L = compute_laplacian(edge_index, num_nodes, variant=variant)
             if num_nodes >= self._CPU_EIGEN_THRESHOLD and L.is_cuda:
                 L_cpu = L.cpu()
-                lam, V = torch.linalg.eigh(L_cpu)
+                lam, V = eigh_float64(L_cpu)
                 self.lam_L = lam.to(L.device)
                 self.V = V.to(L.device)
             else:
-                self.lam_L, self.V = torch.linalg.eigh(L)
+                self.lam_L, self.V = eigh_float64(L)
             self.L = L
             self.device = L.device
 
@@ -546,6 +574,7 @@ class GraphEigenTruncated:
         gen = torch.Generator(device=device).manual_seed(int(seed))
         X0 = torch.randn(num_nodes, k, generator=gen, device=device, dtype=L_sparse.dtype)
         lam, V = torch.lobpcg(L_sparse, k=k, X=X0, largest=False, niter=300)
+        lam, V = ritz_refine(L_sparse, V)
         sort_idx = lam.argsort()
         lam_L = lam[sort_idx]
         V_sorted = V[:, sort_idx]
@@ -575,7 +604,7 @@ class GraphEigenTruncated:
         # Use dense eigh for small graphs, LOBPCG for large ones
         if num_nodes <= 2 * k:
             L = compute_laplacian(edge_index, num_nodes, variant=variant)
-            lam_all, V_all = torch.linalg.eigh(L)
+            lam_all, V_all = eigh_float64(L)
             self.lam_L = lam_all[:k]
             self.V = V_all[:, :k]
             self.L = L
@@ -588,6 +617,7 @@ class GraphEigenTruncated:
             X0 = torch.randn(num_nodes, k, generator=gen, device=edge_index.device)
             lam, V = torch.lobpcg(L_sparse, k=k, X=X0, largest=False,
                                    niter=300)
+            lam, V = ritz_refine(L_sparse, V)
             sort_idx = lam.argsort()
             self.lam_L = lam[sort_idx]
             self.V = V[:, sort_idx]

@@ -36,7 +36,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 import numpy as np
 import torch
 from scipy.optimize import minimize, minimize_scalar
-from scipy.stats import kstest
+from scipy.stats import kstest, rankdata
 from sklearn.metrics import roc_auc_score
 
 from data_utils import load_data
@@ -242,13 +242,23 @@ def score_nodes(delta: np.ndarray, V: np.ndarray, precision: np.ndarray) -> Tupl
 
 
 def percentile_rank(scores: np.ndarray) -> np.ndarray:
-    """Return deterministic percentile ranks in [0, 1] for unsupervised fusion."""
-    order = np.argsort(scores, kind="mergesort")
-    ranks = np.empty_like(order, dtype=np.float64)
-    if len(order) <= 1:
+    """Return percentile ranks in [0, 1] for unsupervised fusion.
+
+    Ties receive their average rank, so the result does not depend on the
+    order of the nodes (a constant vector maps to a constant).
+    """
+    scores = np.asarray(scores)
+    if scores.shape[0] <= 1:
         return np.zeros_like(scores, dtype=np.float64)
-    ranks[order] = np.arange(len(order), dtype=np.float64) / float(len(order) - 1)
-    return ranks
+    if os.environ.get("EBGAD_INDEX_TIES") == "1":
+        # Tie-breaking of the submitted version (ties ordered by node index); kept only to
+        # reproduce the YelpChi ordering artifact documented in the paper's appendix.
+        order = np.argsort(scores, kind="mergesort")
+        ranks = np.empty_like(order, dtype=np.float64)
+        ranks[order] = np.arange(len(order), dtype=np.float64) / float(len(order) - 1)
+        return ranks
+    ranks = rankdata(scores, method="average").astype(np.float64)
+    return (ranks - 1.0) / float(scores.shape[0] - 1)
 
 
 def select_metric(metrics: Dict, selector: str) -> Tuple[str, float]:

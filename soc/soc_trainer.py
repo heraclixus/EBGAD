@@ -25,6 +25,7 @@ import torch
 import torch.nn as nn
 
 from bridge.graph_ops import (
+    eigh_float64,
     compute_laplacian,
     shifted_laplacian_precision,
     GraphEigen,
@@ -308,7 +309,7 @@ class SOCTrainer:
             L_refined = compute_affinity_refined_laplacian(
                 edge_index, x, n, variant=cfg.laplacian_variant,
             )
-            lam_L, V = torch.linalg.eigh(L_refined)
+            lam_L, V = eigh_float64(L_refined)
             self.graph_eigen = GraphEigen.from_eigenpairs(lam_L, V, L=L_refined)
         elif n >= _LARGE_GRAPH_THRESHOLD:
             self.graph_eigen = GraphEigenTruncated(
