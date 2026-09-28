@@ -13,6 +13,7 @@ Usage:
 """
 from __future__ import annotations
 
+import os
 import itertools
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Tuple
@@ -130,6 +131,11 @@ def compute_modeled_subspace_mask(
     tol: float = 1e-8,
 ) -> np.ndarray:
     """Boolean mask for the modeled eigenspace."""
+    forced = os.environ.get("EBGAD_SUBSPACE")  # "keep" or "drop": overrides the mode a script passes
+    if forced == "keep":
+        mode = "legacy"
+    elif forced == "drop":
+        mode = "drop_nullspace"
     if mode in ("legacy", "full", "all"):
         return np.ones_like(lam_L, dtype=bool)
 

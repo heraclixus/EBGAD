@@ -21,6 +21,7 @@ Key quantities (per eigenvalue q_i of Q_ρ, constant schedule α):
 
 from __future__ import annotations
 
+import os
 import math
 from typing import NamedTuple, Optional, Tuple
 
@@ -312,6 +313,11 @@ def compute_modeled_subspace_mask(
     ``"legacy"`` keeps all computed modes.
     ``"drop_nullspace"`` excludes near-zero Laplacian modes.
     """
+    forced = os.environ.get("EBGAD_SUBSPACE")  # "keep" or "drop": overrides the mode a script passes
+    if forced == "keep":
+        mode = "legacy"
+    elif forced == "drop":
+        mode = "drop_nullspace"
     if mode in ("legacy", "full", "all"):
         return torch.ones_like(lam_L, dtype=torch.bool)
 

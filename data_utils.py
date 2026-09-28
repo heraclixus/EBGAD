@@ -416,7 +416,41 @@ def augment_structural_features(data, include_background_edges=False):
     return data
 
 
+def relabel_nodes(data, seed: int):
+    """Randomly relabel the nodes (features, labels, node masks, edge endpoints).
+
+    The model is equivariant to node relabeling, so any change in a metric
+    under this map is an ordering artifact (tie-breaking), not signal.
+    """
+    import numpy as np
+    n = data.x.shape[0]
+    perm = torch.from_numpy(np.random.RandomState(seed).permutation(n))
+    inv = torch.empty_like(perm)
+    inv[perm] = torch.arange(n)
+    data = data.clone()
+    for key in list(data.keys()):
+        value = data[key]
+        if key == "edge_index":
+            data[key] = inv[value]
+        elif torch.is_tensor(value) and value.dim() >= 1 and value.shape[0] == n:
+            data[key] = value[perm]
+    return data
+
+
 def load_data(name: str):
+    """Load a dataset by name; see ``_load_data``.
+
+    If the environment variable ``EBGAD_RELABEL_SEED`` is set, the nodes are
+    randomly relabeled with that seed (the relabeling gate).
+    """
+    data = _load_data(name)
+    seed = os.environ.get("EBGAD_RELABEL_SEED")
+    if seed not in (None, ""):
+        data = relabel_nodes(data, int(seed))
+    return data
+
+
+def _load_data(name: str):
     """Load a dataset by name.  Dispatches to .mat, fraud CSV, or PyGOD.
 
     Parameters
