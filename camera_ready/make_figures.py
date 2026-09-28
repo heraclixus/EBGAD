@@ -1,7 +1,8 @@
 """Appendix figures from the regenerated runs.
 
-likelihood   residual-space likelihood over (rho, kappa) at the Table 1 configuration, with the
-             profile path, the selected optimum and the Newton iterates in rho
+likelihood   residual-space likelihood over (rho, kappa) at the EB-fitted configuration of the run
+             (likelihood-selected bandwidth), with the profile path, the selected optimum and the
+             Newton iterates in rho
 densities    density of the selected score for normal and anomalous nodes
 """
 from __future__ import annotations
@@ -32,7 +33,7 @@ def likelihood(root, out, datasets):
     from data_utils import load_data
     from soc.prior_optimizer import Q_rho_eigenvalues, marginal_log_likelihood_stationary
     from test_dynamic_score_bank import prepare_model_entries
-    cfgs = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "table1_configs.json")))
+    cfgs = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fitted_configs.json")))
     fig, axes = plt.subplots(2, len(datasets), figsize=(3.3 * len(datasets), 4.6),
                              gridspec_kw={"height_ratios": [2.2, 1.0]}, squeeze=False)
     record = {}

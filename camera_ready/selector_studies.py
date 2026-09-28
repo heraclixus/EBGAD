@@ -39,9 +39,14 @@ def pool_dump(root, ds, order="orig"):
     return S.load_dump(pd_) if os.path.exists(pd_) else None
 
 
-def auc_of(root, ds, family, branch, d, cache):
+def auc_of(root, ds, sel, d, cache, anchors):
     """AUROC of the score a routing would select; None when that pool was not run for the dataset."""
     run, y, mask, names, scores = cache[ds]
+    rule, family, branch = sel
+    if family == "anchor":
+        anc = anchors[ds]
+        branch = S.resolve_branch(rule, family, branch, anc)
+        return S.metrics(y, mask, anc["J"] if branch == "J*" else anc["R"])["auroc"]
     name = S.score_name(family, branch, d)
     if name == "sel/h14_rule":
         pool = pool_dump(root, ds)
@@ -54,14 +59,21 @@ def auc_of(root, ds, family, branch, d, cache):
     return S.metrics(y, mask, scores[:, names.index(name)])["auroc"]
 
 
+def routed(st, d, anc, c=None):
+    """Ordered rules with the score type of an anchor read at the anchor's configuration."""
+    rule, family, branch = S.select_family(st, d, c) if c is not None else S.select_family(st, d)
+    return rule, family, S.resolve_branch(rule, family, branch, anc)
+
+
 def cutoffs(root):
-    cache, stats, diag, base = {}, {}, {}, {}
+    cache, stats, diag, base, anchors = {}, {}, {}, {}, {}
     for ds in S.DATASETS:
         cache[ds] = load(root, ds)
         run, y, mask, names, scores = cache[ds]
         stats[ds] = S.graph_stats(ds, run, root)
         diag[ds] = S.diagnostics(run, names, scores)
-        base[ds] = S.select_family(stats[ds], diag[ds])
+        anchors[ds] = S.anchor_bank(root, ds, "orig", run, names, scores)
+        base[ds] = routed(stats[ds], diag[ds], anchors[ds])
     out = {"constants": list(S.CUTOFFS), "factors": FACTORS, "n_datasets": len(S.DATASETS), "changes": [],
            "base": {ds: list(base[ds]) for ds in S.DATASETS}}
     counts = {f: 0 for f in FACTORS}
@@ -70,11 +82,11 @@ def cutoffs(root):
             c = dict(S.CUTOFFS)
             c[name] = c[name] * f
             for ds in S.DATASETS:
-                sel = S.select_family(stats[ds], diag[ds], c)
+                sel = routed(stats[ds], diag[ds], anchors[ds], c)
                 if sel[1:] != base[ds][1:]:
                     counts[f] += 1
-                    a0 = auc_of(root, ds, base[ds][1], base[ds][2], diag[ds], cache)
-                    a1 = auc_of(root, ds, sel[1], sel[2], diag[ds], cache)
+                    a0 = auc_of(root, ds, base[ds], diag[ds], cache, anchors)
+                    a1 = auc_of(root, ds, sel, diag[ds], cache, anchors)
                     out["changes"].append({"cutoff": name, "factor": f, "dataset": ds,
                                            "from": list(base[ds][1:]), "to": list(sel[1:]),
                                            "auc_from": a0, "auc_to": a1})
@@ -85,7 +97,7 @@ def cutoffs(root):
     out["joint"] = {}
     for f in (0.75, 1.25):
         c = {k: v * f for k, v in S.CUTOFFS.items()}
-        ch = [ds for ds in S.DATASETS if S.select_family(stats[ds], diag[ds], c)[1:] != base[ds][1:]]
+        ch = [ds for ds in S.DATASETS if routed(stats[ds], diag[ds], anchors[ds], c)[1:] != base[ds][1:]]
         out["joint"][str(f)] = ch
     return out
 
@@ -105,15 +117,25 @@ def ingredients(root):
         if key is None:
             continue
         bank = run[key]
-        sel = bank.get("selectors", {})
         pick = S.score_name(family, branch, d)
+        rule_pick = None
+        if family == "anchor":
+            # the equilibrium bank at the anchor's configuration
+            anc = S.anchor_bank(root, ds, "orig", run, names, scores)
+            bank = anc["bank"]
+            branch = S.resolve_branch(rule, family, branch, anc)
+            pick = S.score_name(family, branch, d)
+            rule_pick = S.metrics(y, mask, anc["J"] if branch == "J*" else anc["R"])["auroc"]
+        sel = bank.get("selectors", {})
+        if rule_pick is None:
+            rule_pick = S.metrics(y, mask, scores[:, names.index(pick)])["auroc"]
         out[ds] = {
             "bank": key, "n_scores": bank.get("n_scores"),
             "nullks_only": 100 * bank["auc_ks_selected"], "nullks_score": bank["score_ks"],
             "stability_only": 100 * sel["stability"]["auc"], "stability_score": sel["stability"]["score"],
             "tail_stable": 100 * sel["tail_stable"]["auc"], "tail_stable_score": sel["tail_stable"]["score"],
             "corr_stable": 100 * sel["corr_stable"]["auc"], "corr_stable_score": sel["corr_stable"]["score"],
-            "rule_pick": S.metrics(y, mask, scores[:, names.index(pick)])["auroc"], "rule_score": pick,
+            "rule_pick": rule_pick, "rule_score": pick,
             "oracle": 100 * bank["auc_oracle"], "oracle_score": bank["oracle_score"],
         }
     return out
@@ -144,6 +166,10 @@ def stacking(root):
         used = "candidate pool" if (pool is not None and table[ds]["first"]["score"] == "sel/h14_rule") else "bank"
         if used == "candidate pool":
             y, mask, names, scores = pool
+        else:
+            anc = S.anchor_bank(root, ds, "orig", run, names, scores)
+            if anc["source"] == "anchor":  # the anchor of the dataset is not a column of the run
+                scores = np.column_stack([scores, anc["J"], anc["R"]])
         auc, ncol, single = stack(y, mask, scores)
         first = S.run_one(root, ds, "orig")
         out[ds] = {"pool": used, "columns": ncol, "selector": first["selected"]["auroc"], "best_single": single,

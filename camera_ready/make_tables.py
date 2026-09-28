@@ -115,7 +115,7 @@ def main():
     tex = """\\begin{table}[t]
   \\centering
   \\caption{%%
-    AUROC (\\%%) on 11 GAD benchmarks. \\textbf{Bold}: best; \\underline{underline}: second; \\oom{} = out of memory. Baselines use their native anomaly-score direction (Appendix Table~\\ref{tab:score_orientation_audit}). Cell sources: $^{*}$ published in the TAM benchmark \\cite{qiao2023truncated}; $^{\\dagger}$ published by the baseline's authors (out of memory on our hardware); unmarked baseline cells are our runs with published hyperparameters. EB-GAD is deterministic given the eigenbasis; for truncated spectra (YelpChi, Elliptic, Elliptic++, DGraph, T-Finance) it is the mean $\\pm$ standard deviation over five node relabelings (Appendix~\\ref{app:regeneration}).
+    AUROC (\\%%) on 11 GAD benchmarks. \\textbf{Bold}: best; \\underline{underline}: second; \\oom{} = out of memory. Baselines use their native anomaly-score direction (Appendix Table~\\ref{tab:score_orientation_audit}). Cell sources: $^{*}$ published in the TAM benchmark \\cite{qiao2023truncated}; $^{\\dagger}$ published by the baseline's authors (out of memory on our hardware); unmarked baseline cells are our runs with published hyperparameters. For truncated spectra (YelpChi, Elliptic, Elliptic++, DGraph, T-Finance) EB-GAD is the mean $\\pm$ standard deviation over five node orders (Appendix~\\ref{app:regeneration}).
   }
   \\label{tab:main_auroc}
   \\scriptsize
@@ -217,7 +217,7 @@ def main():
     Label-free EB-GAD configuration behind each cell of Table~\\ref{tab:main_auroc}.
     \\emph{Template}: low-pass Mat\\'ern or feature-affinity-weighted (\\S\\ref{app:selector_details}).
     $k$: number of retained low-frequency Laplacian eigenpairs (``all'' = full spectrum).
-    $\\rho,\\kappa,\\gamma$: EB-fitted graph trust and Mat\\'ern inverse length-scale, and the template bandwidth.
+    $\\rho,\\kappa,\\gamma$: EB-fitted graph trust and Mat\\'ern inverse length-scale, and the template bandwidth of the selected score (the anchor bandwidth $\\gamma_a$ for an anchor, the likelihood-selected bandwidth for a profile, the pool rule for control energy and ratio).
     \\emph{PCA}: retained PCA dimensions. \\emph{Rule}: the ordered rule of \\S\\ref{app:selector_details} that fires.
   }
   \\label{tab:ebgad_hyperparams}
@@ -239,7 +239,7 @@ def main():
     tex = """\\begin{table*}[!htb]
 \\centering
 \\scriptsize
-\\caption{Unlabeled quantities read by the selector. $h$: cosine feature homophily over a fixed sample of edges, $d_e$: edges per node of the graph operator, $D_x$: raw feature dimension, $k/n$: truncation ratio. Diagnostics of the run: NullKS of the two equilibrium scores, Berk--Jones statistic (BJ) and NullKS of the profile score, and the two-groups mixture mass $\\pi$.}
+\\caption{Unlabeled quantities read by the selector. $h$: cosine feature homophily over a fixed sample of edges, $d_e$: edges per node of the graph operator, $D_x$: raw feature dimension, $k/n$: truncation ratio. Diagnostics of the EB-fitted run: NullKS of its two equilibrium scores, Berk--Jones statistic (BJ) and NullKS of the profile score, and the two-groups mixture mass $\\pi$.}
 \\label{tab:selector_graph_stats}
 \\setlength{\\tabcolsep}{4pt}
 \\begin{tabular}{l c c c c c c c c c}
@@ -254,29 +254,33 @@ Dataset & $h$ & $d_e$ & $D_x$ & $k/n$ & NullKS($J^\\star$) & NullKS($R$) & BJ & 
     open(os.path.join(OUT, "table_selector_stats.tex"), "w").write(tex)
 
     # ------------------------------------------------------------------ equilibrium scores
-    rowJ, rowR, rowK, rowSel = [], [], [], []
+    rowJ, rowR, rowG, rowSel = [], [], [], []
     numbers["equilibrium"] = {}
     for ds in DATASETS:
         a = t[ds]["aggregate"]
         f = t[ds]["first"]
-        pick = f["equilibrium"]["score"].split("/")[1]
+        pick = f["equilibrium"]["score"]
         j, r = a["J*_auroc_mean"], a["R_auroc_mean"]
-        rowJ.append(("\\textbf{%.1f}" if pick == "J@inf" else "%.1f") % j)
-        rowR.append(("\\textbf{%.1f}" if pick == "R@inf" else "%.1f") % r)
+        rowG.append("%g" % f["anchor"]["gamma"])
+        rowJ.append(("\\textbf{%.1f}" if pick == "J*" else "%.1f") % j)
+        rowR.append(("\\textbf{%.1f}" if pick == "R" else "%.1f") % r)
         rowSel.append("%.1f" % a["selected_auroc_mean"])
         numbers["equilibrium"][ds] = {"J": round(j, 1), "R": round(r, 1), "pick": pick,
                                       "eq": round(a["equilibrium_auroc_mean"], 1),
-                                      "selected": round(a["selected_auroc_mean"], 1)}
+                                      "selected": round(a["selected_auroc_mean"], 1),
+                                      "gamma": f["anchor"]["gamma"], "gamma_fit": f["anchor"]["gamma_fit"],
+                                      "J_fit": round(a["J*_fit_auroc_mean"], 1), "R_fit": round(a["R_fit_auroc_mean"], 1)}
     tex = """\\begin{table}[!htb]
 \\centering
 \\scriptsize
-\\caption{Equilibrium scores of the EB-fitted configuration: AUROC (\\%%) of $J^\\star$ and $R$. \\textbf{Bold}: the score chosen without labels (larger NullKS; ties go to $J^\\star$; rule 1 of \\S\\ref{app:selector_details} fixes $R$ on sparse truncated graphs). Last row: the score selected in Table~\\ref{tab:main_auroc}.}
+\\caption{Equilibrium anchor: AUROC (\\%%) of $J^\\star$ and $R$ at the anchor bandwidth $\\gamma_a$ (the grid value nearest to $\\gamma_0$) with the EB fit of $(\\rho,\\kappa)$ at that bandwidth. \\textbf{Bold}: the score chosen without labels (larger NullKS; ties go to $J^\\star$; rule 1 of \\S\\ref{app:selector_details} fixes $R$ on sparse truncated graphs). Last row: the score selected in Table~\\ref{tab:main_auroc}.}
 \\label{tab:ks_ablation}
 \\setlength{\\tabcolsep}{2pt}
 \\begin{tabular}{l ccccccccccc}
 \\toprule
 & %s \\\\
 \\midrule
+$\\gamma_a$ & %s \\\\
 $J^\\star$ & %s \\\\
 $R$       & %s \\\\
 \\midrule
@@ -284,7 +288,7 @@ Table~\\ref{tab:main_auroc} & %s \\\\
 \\bottomrule
 \\end{tabular}
 \\end{table}
-""" % (" & ".join(short(d) for d in DATASETS), " & ".join(rowJ), " & ".join(rowR), " & ".join(rowSel))
+""" % (" & ".join(short(d) for d in DATASETS), " & ".join(rowG), " & ".join(rowJ), " & ".join(rowR), " & ".join(rowSel))
     open(os.path.join(OUT, "table_equilibrium.tex"), "w").write(tex)
 
     # ------------------------------------------------------------------ finite horizon at a matched configuration
@@ -305,7 +309,7 @@ Table~\\ref{tab:main_auroc} & %s \\\\
   \centering
   \scriptsize
   \setlength{\tabcolsep}{2.2pt}
-  \caption{Contribution of the finite horizon: AUROC (\%%) of the selected score against the equilibrium score of the \emph{same} configuration (same operator, template, PCA, truncation and EB fit), chosen between $J^\star$ and $R$ by NullKS. \emph{Family}: the family the selector routes to; for an anchor the two rows coincide by construction. $\Delta={\rm Selected}-{\rm Equilibrium}$.}
+  \caption{Contribution of the finite horizon: AUROC (\%%) of the selected score against the equilibrium score ($J^\star$ or $R$, by NullKS) of the \emph{same} configuration (operator, template, bandwidth, PCA, truncation, EB fit). \emph{Family}: the family the selector routes to; for an anchor the two rows coincide.}
   \label{tab:bank_ablation}
   \resizebox{\textwidth}{!}{%%
   \begin{tabular}{l ccccccccccc}

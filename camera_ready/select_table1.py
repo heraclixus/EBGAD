@@ -17,7 +17,7 @@ import os
 import sys
 
 import numpy as np
-from scipy.stats import spearmanr
+from scipy.stats import rankdata, spearmanr
 from sklearn.metrics import auc as sk_auc
 from sklearn.metrics import average_precision_score, precision_recall_curve, roc_auc_score
 
@@ -29,6 +29,9 @@ DATASETS = ["weibo", "reddit", "amazon", "yelpchi", "blogcatalog", "facebook", "
             "elliptic", "elliptic_plus_plus", "dgraph", "t_finance"]
 ORDERS = ["orig", "relabel123", "relabel124", "relabel125", "relabel126"]
 POOL_PROFILE = {"amazon": "fine", "blogcatalog": "fine", "acm": "h14", "reddit": "fine"}  # reddit: sensitivity study only
+# Bandwidth of the equilibrium anchor (PROTOCOL.md, item 4): "center" is the protocol; "likelihood" and
+# "average" are the variants of the sensitivity table.
+ANCHOR_BANDWIDTH = os.environ.get("EBGAD_ANCHOR_BANDWIDTH", "center")
 
 # Cutoffs of the ordered rules (Appendix B). `scale` multiplies one of them in the sensitivity study.
 CUTOFFS = {
@@ -89,6 +92,64 @@ def diagnostics(run, names, scores):
 
 def anchor_pick(d):
     return "J*" if d["ks_j"] >= d["ks_r"] else "R"
+
+
+def anchor_file(root, ds, order):
+    jf = os.path.join(root, "anchor", "anchor_%s_%s.json" % (ds, order))
+    if not os.path.exists(jf):
+        raise FileNotFoundError("no anchor file %s (camera_ready/anchor_bandwidth.py)" % jf)
+    z = np.load(jf[:-5] + "_scores.npz", allow_pickle=True)
+    return json.load(open(jf)), [str(x) for x in z["names"]], z["scores"]
+
+
+def anchor_bank(root, ds, order, run, names, scores, rule=None):
+    """J*, R and their NullKS for the equilibrium anchor under a bandwidth rule.
+
+    likelihood  the configuration of the run (residual-space likelihood over the bandwidth grid)
+    center      the grid bandwidth nearest to the graph-statistic center gamma_0, EB fit of (rho, kappa)
+    average     mean percentile rank over the grid bandwidths, each with its own EB fit
+    When the rule gives the bandwidth of the run, the scores of the run are the anchor.
+    """
+    rule = rule or ANCHOR_BANDWIDTH
+    col = {n: i for i, n in enumerate(names)}
+    fit = run["stationary_fit"]
+    a = {"J": scores[:, col["stationary/J@inf"]], "R": scores[:, col["stationary/R@inf"]], "rule": rule,
+         "gamma": float(fit["template_gamma"]), "rho": float(fit["rho"]), "kappa": float(fit["kappa"]),
+         "source": "run", "bank": run["stationary"]}
+    if rule == "center" and "eq_anchor/J@inf" in col and run.get("eq_anchor_fit"):
+        af = run["eq_anchor_fit"]  # runs of the current pipeline carry the anchor
+        a.update(J=scores[:, col["eq_anchor/J@inf"]], R=scores[:, col["eq_anchor/R@inf"]],
+                 gamma=float(af["template_gamma"]), rho=float(af["rho"]), kappa=float(af["kappa"]),
+                 bank=run["eq_anchor"])
+    elif rule == "center":
+        meta, zn, zs = anchor_file(root, ds, order)
+        g = float(meta["gamma_nearest"])
+        if abs(g - a["gamma"]) > 1e-9:
+            row = [r for r in meta["rows"] if abs(r["gamma"] - g) < 1e-9][0]
+            a.update(J=zs[:, zn.index("bw/J@g=%g" % g)], R=zs[:, zn.index("bw/R@g=%g" % g)], gamma=g,
+                     rho=float(row["rho"]), kappa=float(row["kappa"]), source="anchor", bank=row.get("bank"))
+    elif rule == "average":
+        meta, zn, zs = anchor_file(root, ds, order)
+        pct = lambda v: (rankdata(np.nan_to_num(v.astype(np.float64)), method="average") - 1.0) / max(len(v) - 1, 1)
+        gs = [r["gamma"] for r in meta["rows"]]
+        a.update(J=np.mean([pct(zs[:, zn.index("bw/J@g=%g" % g)]) for g in gs], axis=0),
+                 R=np.mean([pct(zs[:, zn.index("bw/R@g=%g" % g)]) for g in gs], axis=0),
+                 gamma=None, rho=None, kappa=None, source="anchor", bank=None,
+                 ks_j=float(np.mean([r["ks_J"] for r in meta["rows"]])),
+                 ks_r=float(np.mean([r["ks_R"] for r in meta["rows"]])))
+    elif rule != "likelihood":
+        raise ValueError(rule)
+    if "ks_j" not in a:
+        a["ks_j"] = ks_null_deviation(np.nan_to_num(np.asarray(a["J"], np.float64)))
+        a["ks_r"] = ks_null_deviation(np.nan_to_num(np.asarray(a["R"], np.float64)))
+    return a
+
+
+def resolve_branch(rule, family, branch, anc):
+    """The score type of an anchor is read at the anchor's configuration; rule 1 fixes R."""
+    if family != "anchor" or rule == 1:
+        return branch
+    return anchor_pick(anc)
 
 
 def select_family(st, d, c=CUTOFFS):
@@ -153,7 +214,7 @@ def graph_stats(ds, run, root):
             "k": truncation(n), "pca": g.get("pca_dim")}
 
 
-def run_one(root, ds, order, cutoffs=CUTOFFS, want_scores=False):
+def run_one(root, ds, order, cutoffs=CUTOFFS, want_scores=False, anchor_rule=None):
     jf = os.path.join(root, "hyp_%s_%s.json" % (ds, order))
     df = os.path.join(root, "dumps", "hyp_%s_%s" % (ds, order), "hyp_%s_%s_scores.npz" % (ds, order))
     if not (os.path.exists(jf) and os.path.exists(df)):
@@ -162,12 +223,16 @@ def run_one(root, ds, order, cutoffs=CUTOFFS, want_scores=False):
     y, mask, names, scores = load_dump(df)
     col = {n: i for i, n in enumerate(names)}
     st = graph_stats(ds, run, root)
-    d = diagnostics(run, names, scores)
+    d = diagnostics(run, names, scores)  # the rules read the diagnostics of the EB-fitted run
+    anc = anchor_bank(root, ds, order, run, names, scores, anchor_rule)
     rule, family, branch = select_family(st, d, cutoffs)
+    branch = resolve_branch(rule, family, branch, anc)
     name = score_name(family, branch, d)
     fit = run["stationary_fit"]
     cfg = {"template": "low-pass", "gamma": fit["template_gamma"], "rho": fit["rho"], "kappa": fit["kappa"],
            "pca": st["pca"], "k": st["k"]}
+    if family == "anchor":
+        cfg.update(gamma=anc["gamma"], rho=anc["rho"], kappa=anc["kappa"])
     detail = {}
     if name == "sel/h14_rule":
         prof = POOL_PROFILE.get(ds, "fine")
@@ -190,19 +255,35 @@ def run_one(root, ds, order, cutoffs=CUTOFFS, want_scores=False):
         kr = ks_null_deviation(np.nan_to_num(mr.astype(np.float64)))
         matched = dict(metrics(y, mask, mj if kj >= kr else mr), score="J*" if kj >= kr else "R",
                        ks_j=kj, ks_r=kr, J=metrics(y, mask, mj)["auroc"], R=metrics(y, mask, mr)["auroc"])
+    elif family == "anchor":
+        vec = anc["J"] if branch == "J*" else anc["R"]
+        matched = None
     else:
         vec = scores[:, col[name]]
         matched = None
-    eq_name = score_name("anchor", "R" if (rule == 1) else anchor_pick(d), d)
+    # the anchor of the dataset, and the equilibrium score at the configuration of the selected score
+    eq_pick = "R" if (rule == 1) else anchor_pick(anc)
+    anchor_m = dict(metrics(y, mask, anc["J"] if eq_pick == "J*" else anc["R"]), score=eq_pick)
+    if matched is None:
+        if family == "anchor":
+            matched = dict(anchor_m)
+        else:
+            fit_pick = anchor_pick(d)
+            matched = dict(metrics(y, mask, scores[:, col[score_name("anchor", fit_pick, d)]]), score=fit_pick)
     out = {
         "dataset": ds, "order": order, "stats": st, "diagnostics": d, "rule": rule, "family": family,
         "branch": branch, "score": name, "config": cfg, "detail": detail,
+        "anchor": {"bandwidth_rule": anc["rule"], "gamma": anc["gamma"], "rho": anc["rho"], "kappa": anc["kappa"],
+                   "ks_j": anc["ks_j"], "ks_r": anc["ks_r"], "source": anc["source"], "pick": eq_pick,
+                   "gamma_fit": float(fit["template_gamma"])},
+        "fit": {"gamma": float(fit["template_gamma"]), "rho": float(fit["rho"]), "kappa": float(fit["kappa"])},
         "selected": metrics(y, mask, vec),
-        "equilibrium": dict(metrics(y, mask, scores[:, col[eq_name]]), score=eq_name),
-        "equilibrium_matched": matched if matched is not None else dict(
-            metrics(y, mask, scores[:, col[eq_name]]), score="J*" if eq_name.endswith("J@inf") else "R"),
-        "J*": metrics(y, mask, scores[:, col["stationary/J@inf"]]),
-        "R": metrics(y, mask, scores[:, col["stationary/R@inf"]]),
+        "equilibrium": anchor_m,
+        "equilibrium_matched": matched,
+        "J*": metrics(y, mask, anc["J"]),
+        "R": metrics(y, mask, anc["R"]),
+        "J*_fit": metrics(y, mask, scores[:, col["stationary/J@inf"]]),
+        "R_fit": metrics(y, mask, scores[:, col["stationary/R@inf"]]),
         "n_eval": int(mask.sum()), "anomaly_rate": 100 * float(y[mask].mean()),
     }
     if want_scores:
@@ -227,7 +308,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default="results/camera_ready")
     ap.add_argument("--out", default="results/camera_ready/table1_ebgad.json")
+    ap.add_argument("--anchor-bandwidth", default=None, choices=["center", "likelihood", "average"])
     args = ap.parse_args()
+    if args.anchor_bandwidth:
+        global ANCHOR_BANDWIDTH
+        ANCHOR_BANDWIDTH = args.anchor_bandwidth
     table = {}
     for ds in DATASETS:
         runs = [r for r in (run_one(args.root, ds, o) for o in ORDERS) if r is not None]
@@ -236,7 +321,7 @@ def main():
             continue
         first = runs[0]
         agg = {}
-        for key in ("selected", "equilibrium", "equilibrium_matched", "J*", "R"):
+        for key in ("selected", "equilibrium", "equilibrium_matched", "J*", "R", "J*_fit", "R_fit"):
             for m in ("auroc", "auprc", "ap"):
                 vals = [r[key][m] for r in runs]
                 agg["%s_%s_mean" % (key, m)] = float(np.mean(vals))
@@ -247,8 +332,8 @@ def main():
         table[ds] = {"n_orders": len(runs), "orders": [r["order"] for r in runs], "first": first,
                      "aggregate": agg, "selections": [list(f) for f in families], "gate": gate,
                      "truncated": first["stats"]["k"] is not None}
-        print("%-20s rule %d %-15s %-14s %-34s AUROC %.2f +- %.2f (n=%d) AUPRC %.2f | eq %.2f | J* %.2f R %.2f | gate %s" % (
-            ds, first["rule"], first["family"], first["branch"], first["score"],
+        print("%-20s rule %d %-15s %-14s %-34s gamma %s AUROC %.2f +- %.2f (n=%d) AUPRC %.2f | eq %.2f | J* %.2f R %.2f | gate %s" % (
+            ds, first["rule"], first["family"], first["branch"], first["score"], first["config"]["gamma"],
             agg["selected_auroc_mean"], agg["selected_auroc_std"], len(runs), agg["selected_auprc_mean"],
             agg["equilibrium_matched_auroc_mean"], agg["J*_auroc_mean"], agg["R_auroc_mean"], gate))
         if len(families) > 1:

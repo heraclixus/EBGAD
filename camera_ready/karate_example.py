@@ -20,6 +20,7 @@ from scipy.stats import rankdata
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "neurips2026"))
+from test_multiscale_gou_poe import study_template_gammas  # noqa: E402
 from test_dynamic_score_bank import (  # noqa: E402
     entry_for_fit, fit_best_entry, horizon_score_bank, prepare_model_entries, q_for_fit,
 )
@@ -34,8 +35,8 @@ def score(A):
     data = SimpleNamespace(x=torch.tensor(A, dtype=torch.float32),
                            edge_index=torch.tensor(np.vstack([src, dst]), dtype=torch.long),
                            y=torch.zeros(n, dtype=torch.long), num_nodes=n)
-    entries = prepare_model_entries(data, graph_types=["original"], template_gammas=[0.5, 1.0, 2.0],
-                                    pca_dim=None, truncated_k=None, modeled_subspace="drop_nullspace",
+    entries = prepare_model_entries(data, graph_types=["original"],
+                                    template_gammas=study_template_gammas(data, [0.5, 1.0, 2.0]), pca_dim=None, truncated_k=None, modeled_subspace="drop_nullspace",
                                     template_type="low", device="cpu")
     fit = fit_best_entry(entries, [np.inf], KAPPAS, False)
     entry = entry_for_fit(entries, fit)

@@ -86,14 +86,17 @@ Dataset & GOU-EB & GOU fixed & heat & polynomial & identity \\
 # ---------------------------------------------------------------------- matched single score
 def matched_single():
     rows, rec = [], {}
+    t1 = json.load(open(os.path.join(RES, "table1_ebgad.json")))
     for ds in DATASETS:
         r = load("matched_table1_%s.json" % ds)
         if r is None:
             continue
         r = r[ds]
         e, q = r["energy"]["pipeline_grid"], r["ratio"]["pipeline_grid"]
-        # family of the comparison: the equilibrium score with the larger NullKS
+        # family of the comparison: the equilibrium score with the larger NullKS (R where rule 1 fixes it)
         fam, g = ("J*", e) if e["limit"]["nullks"] >= q["limit"]["nullks"] else ("R", q)
+        if t1[ds]["first"]["rule"] == 1:
+            fam, g = "R", q
         lim, sel, ora = 100 * g["limit"]["auc"], 100 * g["selected_finite"]["auc"], 100 * g["oracle_finite"]["auc"]
         rows.append("%s ($%s$) & %.1f & %.1f & %.1f & $%+.1f$ & $%+.1f$ \\\\" % (
             DISPLAY[ds], "J^\\star" if fam == "J*" else "R", lim, sel, ora,
@@ -108,7 +111,7 @@ def matched_single():
     write("study_matched_single.tex", r"""\begin{table}[!htb]
 \centering
 \scriptsize
-\caption{Matched single-score comparison at the configuration and EB fit of Table~\ref{tab:ebgad_hyperparams}, shared by both sides. \emph{Equilibrium}: $J^\star$ or $R$, whichever has the larger NullKS. \emph{Finite}: a single hard-endpoint score of the same type ($C_{\Gamma,\infty}$ against $J^\star$, $CR_{\Gamma,\infty}$ against $R$) at one finite horizon $\Gamma\in\{0.02,\dots,50\}$, with no tolerance grid, fusion or aggregation; NullKS picks the horizon, and the best horizon by AUROC is reported as a diagnostic. AUROC (\%%).}
+\caption{Matched single-score comparison at the configuration and EB fit of Table~\ref{tab:ebgad_hyperparams}, shared by both sides. \emph{Equilibrium}: $J^\star$ or $R$, whichever has the larger NullKS ($R$ where rule 1 fixes it). \emph{Finite}: a single hard-endpoint score of the same type ($C_{\Gamma,\infty}$ against $J^\star$, $CR_{\Gamma,\infty}$ against $R$) at one finite horizon $\Gamma\in\{0.02,\dots,50\}$, with no tolerance grid, fusion or aggregation; NullKS picks the horizon, and the best horizon by AUROC is reported as a diagnostic. AUROC (\%%).}
 \label{tab:matched_single}
 \setlength{\tabcolsep}{5pt}
 \begin{tabular}{l ccc cc}
@@ -462,40 +465,70 @@ Dataset & Score & released & relabeled & released & relabeled & node index \\
 
 
 def gamma_profile():
+    """Bandwidth table from the anchor files (camera_ready/anchor_bandwidth.py), original node order."""
     rows, rec = [], {}
+    t1 = json.load(open(os.path.join(RES, "table1_ebgad.json")))
     for ds in DATASETS:
-        r = load("gamma_profile_%s.json" % ds)
-        if r is None:
+        p = os.path.join(RES, "anchor", "anchor_%s_orig.json" % ds)
+        if not os.path.exists(p):
+            MISSING.append("anchor/anchor_%s_orig.json" % ds)
             continue
+        r = json.load(open(p))
         cells = []
-        rec[ds] = {"selected_gamma": r["selected_gamma"], "rows": []}
-        grid_rows = [x for x in r["rows"] if x["in_grid"]]
-        for x in grid_rows:
-            pick = "J" if x["ks_J"] >= x["ks_R"] else "R"
+        rec[ds] = {"gamma_center": round(r["gamma_center"], 3), "gamma_anchor": r["gamma_nearest"],
+                   "gamma_likelihood": r["gamma_likelihood"], "rows": []}
+        most_removed = max(r["rows"], key=lambda x: x["removed"])["gamma"]
+        rule1 = t1[ds]["first"]["rule"] == 1
+        for x in r["rows"]:
+            pick = "R" if rule1 else ("J" if x["ks_J"] >= x["ks_R"] else "R")
             auc = x["auc_" + pick]
-            txt = "$%g$: %.1f" % (x["gamma"], auc)
-            if abs(x["gamma"] - r["selected_gamma"]) < 1e-12:
+            txt = "%g: %.1f" % (x["gamma"], auc)
+            if abs(x["gamma"] - r["gamma_nearest"]) < 1e-12:
                 txt = "\\textbf{%s}" % txt
-            cells.append(txt)
+            if abs(x["gamma"] - r["gamma_likelihood"]) < 1e-12:
+                txt += "$^{\\ell}$"
+            cells.append("%s (%d)" % (txt, round(100 * max(x["removed"], 0.0))))
             rec[ds]["rows"].append({"gamma": x["gamma"], "auc": round(auc, 1), "score": pick, "ml": x["ml"],
-                                    "J": round(x["auc_J"], 1), "R": round(x["auc_R"], 1)})
-        while len(cells) < 4:
+                                    "J": round(x["auc_J"], 1), "R": round(x["auc_R"], 1),
+                                    "removed": round(100 * x["removed"], 1),
+                                    "rho": round(x["rho"], 3), "kappa": x["kappa"]})
+        while len(cells) < 3:
             cells.append("")
-        best = max(rec[ds]["rows"], key=lambda z: z["auc"])
-        selr = [z for z in rec[ds]["rows"] if abs(z["gamma"] - r["selected_gamma"]) < 1e-12][0]
-        rec[ds]["selected_auc"], rec[ds]["best_auc"], rec[ds]["best_gamma"] = selr["auc"], best["auc"], best["gamma"]
-        rows.append("%s & %s \\\\" % (DISPLAY[ds], " & ".join(cells[:4])))
+        rec[ds]["likelihood_is_most_removed"] = bool(abs(most_removed - r["gamma_likelihood"]) < 1e-12)
+        byg = {z["gamma"]: z for z in rec[ds]["rows"]}
+        rec[ds]["anchor_auc"] = byg[r["gamma_nearest"]]["auc"]
+        rec[ds]["likelihood_auc"] = byg[r["gamma_likelihood"]]["auc"]
+        rec[ds]["removed_at_likelihood"] = byg[r["gamma_likelihood"]]["removed"]
+        rows.append("%s & %.2f & %s \\\\" % (DISPLAY[ds], r["gamma_center"], " & ".join(cells[:3])))
     N["gamma_profile"] = rec
+    # is the NullKS choice of the score type the same in every node order?
+    unstable = []
+    for ds in rec:
+        a = json.load(open(os.path.join(RES, "anchor", "anchor_%s_orig.json" % ds)))["rows"]
+        others = [json.load(open(f))["rows"] for f in sorted(glob.glob(os.path.join(RES, "anchor", "anchor_%s_relabel*.json" % ds)))]
+        rec[ds]["orders"] = 1 + len(others)
+        for i, x in enumerate(a):
+            ks = [(x["ks_J"], x["ks_R"])] + [(o[i]["ks_J"], o[i]["ks_R"]) for o in others]
+            if len({j >= r for j, r in ks}) > 1:
+                unstable.append({"dataset": ds, "gamma": x["gamma"], "ks_R": [round(r, 2) for _, r in ks],
+                                 "ks_J": [round(j, 2) for j, _ in ks],
+                                 "is_anchor": bool(abs(x["gamma"] - rec[ds]["gamma_anchor"]) < 1e-12)})
+    full = [ds for ds in rec if ds in ("weibo", "reddit", "amazon", "blogcatalog", "facebook", "acm")]
+    N["gamma_profile_summary"] = {
+        "n": len(rec), "pick_unstable": unstable, "likelihood_is_most_removed": sorted(ds for ds in rec if rec[ds]["likelihood_is_most_removed"]),
+        "anchor_differs": sorted(ds for ds in rec if rec[ds]["gamma_anchor"] != rec[ds]["gamma_likelihood"]),
+        "removed_full_min": min(rec[ds]["removed_at_likelihood"] for ds in full) if full else None,
+        "removed_full_max": max(rec[ds]["removed_at_likelihood"] for ds in full) if full else None}
     if rows:
         write("study_gamma_profile.tex", r"""\begin{table}[!htb]
 \centering
 \scriptsize
-\caption{Template bandwidth profile. For every bandwidth $\gamma$ of a dataset's grid: AUROC (\%%) of the equilibrium score chosen by NullKS after the EB fit at that bandwidth (low-pass template). \textbf{Bold}: the bandwidth selected by the residual-space profile likelihood, which is the one the pipeline uses. The AUROC values are diagnostics: they show what the label-free choice of $\gamma$ costs or gains against the other grid values.}
+\caption{Template bandwidth. $\gamma_0$: graph-statistic center of the grid. For every bandwidth $\gamma$ of a dataset's grid: AUROC (\%%) of the equilibrium score chosen by NullKS after the EB fit at that bandwidth (low-pass template; $R$ on Elliptic, Elliptic++ and DGraph, where rule 1 fixes it) and, in parentheses, the share (\%%) of the feature energy that the residual map removes (0 when the residual has more energy than the features; the shares are small on truncated spectra, where the map acts on the computed modes only). \textbf{Bold}: the anchor bandwidth $\gamma_a$ (grid value nearest to $\gamma_0$ on the log scale). $^{\ell}$: the bandwidth with the largest residual-space likelihood, used by the finite-horizon families. The AUROC values are diagnostics; no rule reads them. Original node order.}
 \label{tab:gamma_profile}
 \setlength{\tabcolsep}{5pt}
-\begin{tabular}{l llll}
+\begin{tabular}{l c lll}
 \toprule
-Dataset & \multicolumn{4}{l}{$\gamma$: AUROC, in increasing $\gamma$} \\
+Dataset & $\gamma_0$ & \multicolumn{3}{l}{$\gamma$: AUROC (removed share), in increasing $\gamma$} \\
 \midrule
 %s
 \bottomrule
@@ -514,7 +547,7 @@ def sensitivity():
         base = t1[ds]["first"]["selected"]["auroc"]
         cells = ["%.1f" % base]
         rec[ds] = {"protocol": round(base, 1)}
-        for v in ("dropnull", "jac"):
+        for v in ("likelihood", "average", "dropnull", "jac"):
             x = r.get(v, {}).get(ds)
             if x is None:
                 cells.append("--" if (v == "dropnull" and t1[ds]["truncated"]) else "n/a")
@@ -530,12 +563,12 @@ def sensitivity():
     write("study_sensitivity.tex", r"""\begin{table}[!htb]
 \centering
 \scriptsize
-\caption{Sensitivity of Table~\ref{tab:main_auroc} to two conventions (original node order, AUROC \%%; ``='': same score and value; ``--'': not applicable, truncated spectra keep all computed modes; n/a: not run). \emph{Nullspace dropped}: Laplacian null modes are excluded from the modeled subspace on the full-spectrum datasets. \emph{Jacobian}: the template bandwidth is chosen with the Jacobian term of the residual map added to the profile likelihood. The ordered rules and the within-family scores are unchanged.}
+\caption{Sensitivity of Table~\ref{tab:main_auroc} to four conventions (original node order, AUROC \%%; ``='': same score and value; ``--'': not applicable, truncated spectra keep all computed modes; n/a: not run). \emph{Anchor, likelihood}: the anchor uses the bandwidth with the largest residual-space likelihood, as in the submitted Algorithm~\ref{alg:prior_opt}. \emph{Anchor, averaged}: the anchor is the mean percentile rank of the equilibrium score over the three bandwidths of the grid. \emph{Nullspace dropped}: Laplacian null modes are excluded from the modeled subspace on the full-spectrum datasets. \emph{Jacobian}: every bandwidth, including the anchor's, maximizes the likelihood with the term $D\sum_j\log\max(t_j,10^{-12})$ of the residual map $t_j=1-(\gamma^2+\lambda_j)^{-1}$, which excludes bandwidths whose map is negative on a computed mode. The ordered rules and the within-family scores are unchanged.}
 \label{tab:sensitivity}
-\setlength{\tabcolsep}{6pt}
-\begin{tabular}{l ccc}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{l ccccc}
 \toprule
-Dataset & Protocol & Nullspace dropped & Jacobian \\
+Dataset & Protocol & Anchor, likelihood & Anchor, averaged & Nullspace dropped & Jacobian \\
 \midrule
 %s
 \bottomrule
@@ -544,10 +577,66 @@ Dataset & Protocol & Nullspace dropped & Jacobian \\
 """ % "\n".join(rows))
 
 
+def anchor_variants():
+    """The studies of the EB-fitted bank, rerun at the anchor bandwidth (numbers quoted in the text)."""
+    rec = {}
+    r = []
+    for f in sorted(glob.glob(os.path.join(ST, "parts_anchor", "e5_*.json"))):
+        r.extend(json.load(open(f)))
+    for ds in ("weibo", "reddit"):
+        xs = sorted([x for x in r if x["dataset"] == ds], key=lambda x: x["extra_frac"])
+        if xs:
+            rec.setdefault("contamination", {})[ds] = [
+                {"extra": round(100 * x["extra_frac"]), "total": round(100 * x["total_contamination"], 1),
+                 "rho": round(x["rho"], 3), "kappa": x["kappa"], "entry": x["entry"],
+                 "auc_original": round(100 * x["auc_original"], 1),
+                 "auc_injected": None if x["auc_injected"] is None else round(100 * x["auc_injected"], 1)} for x in xs]
+    r, e = [], []
+    for f in sorted(glob.glob(os.path.join(ST, "parts_anchor", "e8_*.json"))):
+        r.extend(json.load(open(f)))
+    for f in sorted(glob.glob(os.path.join(ST, "parts_anchor", "e13_*.json"))):
+        e.extend(json.load(open(f)))
+    for pl in ("scattered", "clustered"):
+        xs = sorted([x for x in r if x["placement"] == pl], key=lambda x: x["seed"])
+        if xs:
+            rec.setdefault("neighbors", {})[pl] = {
+                "selected": [round(100 * x["auc_injected"], 1) for x in xs],
+                "oracle": [round(100 * x["auc_injected_oracle"], 1) for x in xs],
+                "entry": sorted({x["entry"] for x in xs})}
+    if e:
+        e.sort(key=lambda x: x["seed"])
+        rec.setdefault("neighbors", {})["edges"] = {
+            "min_energy": [round(100 * x["auc_min_node_energy"], 1) for x in e],
+            "cross_std": [round(100 * x["auc_cross_std"], 1) for x in e]}
+    k = os.path.join(ST, "karate_anchor.json")
+    if os.path.exists(k):
+        rec["karate"] = json.load(open(k))
+    m = os.path.join(ST, "e6_misspec_anchor.json")
+    if os.path.exists(m):
+        r = json.load(open(m))
+        rec["misspecification"] = {v: [round(100 * x["auc_sel"], 1) for x in sorted(
+            [x for x in r if x["variant"] == v], key=lambda x: x["seed"])] for v in sorted({x["variant"] for x in r})}
+    # equilibrium score at gamma_0 itself, without the grid (camera_ready/bandwidth_criteria.py)
+    t1 = json.load(open(os.path.join(RES, "table1_ebgad.json")))
+    direct = {}
+    for ds in DATASETS:
+        b = os.path.join(ST, "bandwidth", "%s.json" % ds)
+        if not os.path.exists(b) or t1[ds]["first"]["family"] != "anchor":
+            continue
+        c = [x for x in json.load(open(b))["rows"] if x["is_center"]][0]
+        pick = "R" if t1[ds]["first"]["rule"] == 1 else ("J" if c["ks_J"] >= c["ks_R"] else "R")
+        direct[ds] = {"gamma0": round(c["gamma"], 3), "score": pick, "auc": round(c["auc_" + pick], 1)}
+    rec["gamma0_direct"] = direct
+    u = os.path.join(ST, "uniform_center_facebook.json")
+    if os.path.exists(u):
+        rec["uniform_center_facebook"] = json.load(open(u))
+    N["anchor_variants"] = rec
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     for f in (isolation, matched_single, cutoffs, ingredients, stacking, contamination, misspecification,
-              neighbors, templates, karate, ordering, gamma_profile, sensitivity):
+              neighbors, templates, karate, ordering, gamma_profile, sensitivity, anchor_variants):
         f()
     json.dump(N, open(os.path.join(RES, "study_numbers.json"), "w"), indent=1, default=str)
     print("missing:", MISSING)

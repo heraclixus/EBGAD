@@ -1,21 +1,21 @@
 {
  "weibo": {
   "tmpl": "low",
-  "gamma": 0.7,
+  "gamma": 0.5,
   "tk": null,
   "pca": 64,
   "sub": "legacy",
-  "rho": 0.6968329560646154,
-  "kappa": 3.0
+  "rho": 1.0,
+  "kappa": 1.0
  },
  "reddit": {
   "tmpl": "low",
-  "gamma": 0.7,
+  "gamma": 2.0,
   "tk": null,
   "pca": null,
   "sub": "legacy",
-  "rho": 0.9094623339870546,
-  "kappa": 3.0
+  "rho": 1.0,
+  "kappa": 1.0
  },
  "amazon": {
   "tmpl": "low",
@@ -73,12 +73,12 @@
  },
  "elliptic_plus_plus": {
   "tmpl": "low",
-  "gamma": 1.0,
+  "gamma": 2.0,
   "tk": 300,
   "pca": 64,
   "sub": "legacy",
-  "rho": 1.0,
-  "kappa": 20.0
+  "rho": 0.9333623198507041,
+  "kappa": 0.1
  },
  "t_finance": {
   "tmpl": "low",

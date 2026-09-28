@@ -1,0 +1,92 @@
+{
+ "weibo": {
+  "tmpl": "low",
+  "gamma": 0.7,
+  "tk": null,
+  "pca": 64,
+  "sub": "legacy",
+  "rho": 0.6968329560646154,
+  "kappa": 3.0
+ },
+ "reddit": {
+  "tmpl": "low",
+  "gamma": 0.7,
+  "tk": null,
+  "pca": null,
+  "sub": "legacy",
+  "rho": 0.9094623339870546,
+  "kappa": 3.0
+ },
+ "amazon": {
+  "tmpl": "low",
+  "gamma": 0.7,
+  "tk": null,
+  "pca": null,
+  "sub": "legacy",
+  "rho": 1.0,
+  "kappa": 2.0
+ },
+ "yelpchi": {
+  "tmpl": "low",
+  "gamma": 1.0,
+  "tk": 500,
+  "pca": null,
+  "sub": "legacy",
+  "rho": 1.0,
+  "kappa": 20.0
+ },
+ "blogcatalog": {
+  "tmpl": "low",
+  "gamma": 0.5,
+  "tk": null,
+  "pca": 64,
+  "sub": "legacy",
+  "rho": 0.05067370788620654,
+  "kappa": 20.0
+ },
+ "facebook": {
+  "tmpl": "low",
+  "gamma": 0.7,
+  "tk": null,
+  "pca": 64,
+  "sub": "legacy",
+  "rho": 0.7272682383194803,
+  "kappa": 3.0
+ },
+ "acm": {
+  "tmpl": "low",
+  "gamma": 0.7,
+  "tk": null,
+  "pca": 64,
+  "sub": "legacy",
+  "rho": 0.6583853114859776,
+  "kappa": 3.0
+ },
+ "elliptic": {
+  "tmpl": "low",
+  "gamma": 1.0,
+  "tk": 300,
+  "pca": 64,
+  "sub": "legacy",
+  "rho": 1.0,
+  "kappa": 20.0
+ },
+ "elliptic_plus_plus": {
+  "tmpl": "low",
+  "gamma": 1.0,
+  "tk": 300,
+  "pca": 64,
+  "sub": "legacy",
+  "rho": 1.0,
+  "kappa": 20.0
+ },
+ "t_finance": {
+  "tmpl": "low",
+  "gamma": 0.2,
+  "tk": 500,
+  "pca": null,
+  "sub": "legacy",
+  "rho": 1.0,
+  "kappa": 0.003
+ }
+}
